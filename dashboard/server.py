@@ -37,7 +37,7 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 class PredictRequest(BaseModel):
     lat: float = Field(..., ge=5.0, le=25.0, description="Latitude (5°N to 25°N)")
     lon: float = Field(..., ge=80.0, le=100.0, description="Longitude (80°E to 100°E)")
-    date: str = Field("2024-11-15", description="Calendar date (YYYY-MM-DD) in 2024")
+    date: str = Field("2024-04-06", description="Calendar date (YYYY-MM-DD) in 2024")
 
 
 @app.get("/")
@@ -79,9 +79,9 @@ def predict_profile(req: PredictRequest):
 
 @app.get("/api/predict-get")
 def predict_profile_get(
-    lat: float = Query(15.25, ge=5.0, le=25.0),
-    lon: float = Query(87.50, ge=80.0, le=100.0),
-    date: str = Query("2024-11-15"),
+    lat: float = Query(14.00, ge=5.0, le=25.0),
+    lon: float = Query(87.00, ge=80.0, le=100.0),
+    date: str = Query("2024-04-06"),
 ):
     engine = OceanEmbedEngine.get_instance()
     return engine.predict(lat=lat, lon=lon, date=date)

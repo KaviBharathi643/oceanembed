@@ -27,6 +27,20 @@ from src.models.oceanembed import OceanEmbedModel
 from src.data.dataset import TARGET_DEPTHS, INPUT_CHANNELS, NUM_INPUT_CHANNELS, NUM_TARGET_DEPTHS
 
 
+def haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Compute great-circle distance between two coordinates in kilometers using Haversine formula."""
+    R = 6371.0  # Earth mean radius in km
+    phi1 = np.radians(lat1)
+    phi2 = np.radians(lat2)
+    delta_phi = np.radians(lat2 - lat1)
+    delta_lambda_deg = ((lon2 - lon1 + 180.0) % 360.0) - 180.0
+    delta_lambda = np.radians(delta_lambda_deg)
+
+    a = np.sin(delta_phi / 2.0) ** 2 + np.cos(phi1) * np.cos(phi2) * np.sin(delta_lambda / 2.0) ** 2
+    c = 2.0 * np.arcsin(np.clip(np.sqrt(a), 0.0, 1.0))
+    return float(R * c)
+
+
 class OceanEmbedEngine:
     _instance = None
 
@@ -292,13 +306,12 @@ class OceanEmbedEngine:
             }
 
         # Match nearest in-situ ARGO profile on the selected date (following validate_argo.py collocation logic)
-        argo_candidates = self.argo_by_date.get(str(date), [])
+        norm_date = str(date).strip().split("T")[0].split(" ")[0]
+        argo_candidates = self.argo_by_date.get(norm_date, [])
         best_argo = None
         best_argo_dist = float("inf")
         for p in argo_candidates:
-            dlat_a = (p["lat"] - actual_lat) * 111.0
-            dlon_a = (p["lon"] - actual_lon) * 111.0 * np.cos(np.radians(actual_lat))
-            d_a = float(np.sqrt(dlat_a ** 2 + dlon_a ** 2))
+            d_a = haversine_distance_km(float(actual_lat), float(actual_lon), float(p["lat"]), float(p["lon"]))
             if d_a < best_argo_dist:
                 best_argo_dist = d_a
                 best_argo = p

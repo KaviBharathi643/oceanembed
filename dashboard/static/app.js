@@ -14,8 +14,11 @@ document.addEventListener("DOMContentLoaded", () => {
   initMap();
   initControls();
   initGrid5x5();
-  // Auto-run primary showcase location (Central Bay - 15.25N, 87.50E)
-  runPrediction(15.25, 87.50, "2024-11-15");
+  // Auto-run primary showcase location (Central Bay - 14.00N, 87.00E on 2024-04-06)
+  const initLat = parseFloat(document.getElementById("input-lat")?.value) || 14.00;
+  const initLon = parseFloat(document.getElementById("input-lon")?.value) || 87.00;
+  const initDate = document.getElementById("explore-date-input")?.value || "2024-04-06";
+  runPrediction(initLat, initLon, initDate);
 });
 
 /* ==========================================================================
