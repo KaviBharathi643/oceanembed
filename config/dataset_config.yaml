@@ -1,0 +1,257 @@
+project:
+  name: OceanEmbed
+  problem_statement_id: 26066
+
+domain:
+  full:
+    lat_min: 5.0
+    lat_max: 30.0
+    lon_min: 45.0
+    lon_max: 105.0
+
+  poc:
+    name: Bay of Bengal
+    lat_min: 5.0
+    lat_max: 25.0
+    lon_min: 80.0
+    lon_max: 100.0
+
+time:
+  start: "2024-01-01"
+  end: "2024-12-31"
+  test_start: "2024-01-01"
+  test_end: "2024-01-03"
+
+target_grid:
+  resolution_degrees: 0.25
+  temporal_resolution: daily
+
+target_depths_m:
+  - 0
+  - 5
+  - 10
+  - 20
+  - 30
+  - 50
+  - 75
+  - 100
+  - 125
+  - 150
+  - 200
+  - 300
+  - 500
+  - 700
+  - 1000
+
+input_variables:
+  - sst
+  - sss
+  - sla
+  - current_u
+  - current_v
+  - wind_u
+  - wind_v
+
+training_target:
+  variable: thetao
+  source: GLORYS
+  product_id: GLOBAL_MULTIYEAR_PHY_001_030
+  dataset_id: cmems_mod_glo_phy_my_0.083deg_P1D-m
+  depth_min: 0.0
+  depth_max: 1100.0
+
+acquisition:
+  region: poc
+  raw_root: data/raw
+  chunking: monthly
+  manifest_name: acquisition_manifest.jsonl
+  preserve_native_resolution: true
+  regrid_during_download: false
+  network:
+    timeout_seconds: 120
+    retries: 5
+    backoff_seconds: 4
+
+sources:
+  glorys:
+    enabled: true
+    role: training_target
+    raw_subdir: glorys
+    provider: Copernicus Marine
+    product_id: GLOBAL_MULTIYEAR_PHY_001_030
+    dataset_id: cmems_mod_glo_phy_my_0.083deg_P1D-m
+    access: copernicusmarine.subset
+    variables: [thetao]
+    native_resolution_deg: 0.083
+    native_temporal: daily
+    depth_min: 0.0
+    depth_max: 1100.0
+    preserve_native_vertical_levels: true
+    interpolate_target_depths: false
+    credentials: copernicus
+
+  sst:
+    enabled: true
+    role: model_input
+    raw_subdir: sst
+    provider: NOAA PSL / NCEI
+    product_name: NOAA OISST v2.1 AVHRR-only
+    dataset_id: noaa.oisst.v2.highres
+    access: opendap
+    variables: [sst]
+    native_resolution_deg: 0.25
+    native_temporal: daily
+    opendap_url: "https://psl.noaa.gov/thredds/dodsC/Datasets/noaa.oisst.v2.highres/sst.day.mean.{year}.nc"
+    https_url: "https://downloads.psl.noaa.gov/Datasets/noaa.oisst.v2.highres/sst.day.mean.{year}.nc"
+    credentials: none
+
+  sla:
+    enabled: true
+    role: model_input
+    raw_subdir: sla
+    provider: Copernicus Marine
+    product_id: SEALEVEL_GLO_PHY_L4_MY_008_047
+    dataset_id: cmems_obs-sl_glo_phy-ssh_my_allsat-l4-duacs-0.125deg_P1D
+    access: copernicusmarine.subset
+    variables: [sla]
+    native_resolution_deg: 0.125
+    native_temporal: daily
+    credentials: copernicus
+
+  sss:
+    enabled: true
+    role: model_input
+    raw_subdir: sss
+    provider: NASA PO.DAAC / RSS
+    product_name: SMAP RSS L3 SSS SMI 8-day running mean V6
+    cmr_short_name: SMAP_RSS_L3_SSS_SMI_8DAY-RUNNINGMEAN_V6
+    access: earthaccess
+    variables: [sss_smap]
+    native_resolution_deg: 0.25
+    native_temporal: 8day_running_mean_daily_files
+    notes: "Daily files of an 8-day running mean; not independent daily observations."
+    credentials: earthdata
+
+  oscar:
+    enabled: true
+    role: model_input
+    raw_subdir: currents
+    provider: NASA PO.DAAC
+    product_name: OSCAR Surface Currents Final v2.0
+    cmr_short_name: OSCAR_L4_OC_FINAL_V2.0
+    access: earthaccess
+    variables: [u, v]
+    rename:
+      u: current_u
+      v: current_v
+    native_resolution_deg: 0.25
+    native_temporal: daily
+    credentials: earthdata
+
+  ccmp:
+    enabled: true
+    role: model_input
+    raw_subdir: winds
+    provider: NASA PO.DAAC / RSS
+    product_name: CCMP 10m winds L4 v3.1
+    cmr_short_name: CCMP_WINDS_10M6HR_L4_V3.1
+    access: earthaccess
+    variables: [uwnd, vwnd]
+    rename:
+      uwnd: wind_u
+      vwnd: wind_v
+    native_resolution_deg: 0.25
+    native_temporal: 6-hourly
+    aggregate_to_daily: false
+    notes: "Native 6-hourly fields. Daily aggregation is a later preprocessing step."
+    credentials: earthdata
+
+  argo:
+    enabled: true
+    role: independent_validation
+    raw_subdir: argo
+    provider: Coriolis / Ifremer
+    dataset_id: ArgoFloats
+    access: erddap
+    erddap_base: "https://erddap.ifremer.fr/erddap/tabledap/ArgoFloats"
+    variables: [time, latitude, longitude, pres, temp, pres_qc, temp_qc, platform_number, cycle_number]
+    native_temporal: asynchronous_profiles
+    notes: "Not a model input. Independent validation only."
+    credentials: none
+
+preprocessing:
+  output_dir: data/processed
+  target_grid:
+    lat_min: 5.0
+    lat_max: 25.0
+    lat_step: 0.25
+    lon_min: 80.0
+    lon_max: 100.0
+    lon_step: 0.25
+    num_lats: 81
+    num_lons: 81
+  target_depths_m:
+    - 0
+    - 5
+    - 10
+    - 20
+    - 30
+    - 50
+    - 75
+    - 100
+    - 125
+    - 150
+    - 200
+    - 300
+    - 500
+    - 700
+    - 1000
+  patch:
+    size: 5
+    radius: 2
+    max_interior_centers: 5929
+  strategy: strategy_a_complete_case
+  splits:
+    train:
+      start: "2024-01-01"
+      end: "2024-08-31"
+    val:
+      start: "2024-09-01"
+      end: "2024-10-31"
+    test:
+      start: "2024-11-01"
+      end: "2024-12-31"
+  input_channels:
+    - sst
+    - sss
+    - sla
+    - current_u
+    - current_v
+    - wind_u
+    - wind_v
+  target_channel: thetao
+
+data:
+  train_file: data/processed/oceanembed_train.nc
+  val_file: data/processed/oceanembed_val.nc
+  test_file: data/processed/oceanembed_test.nc
+  normalization_file: data/processed/normalization.json
+  batch_size: 256
+  num_workers: 0
+  pin_memory: false
+
+model:
+  embedding_dim: 64
+  dropout: 0.1
+  checkpoint_dir: checkpoints
+
+training:
+  optimizer: adamw
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  max_epochs: 50
+  scheduler: reduce_on_plateau
+  scheduler_factor: 0.5
+  scheduler_patience: 5
+  early_stopping_patience: 10
+  gradient_clip_max_norm: null

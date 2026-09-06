@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OceanEmbed — Satellite Embedding-Based Subsurface Temperature Reconstruction</title>
+  
+  <!-- Fonts & Typography -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+  
+  <!-- Offline-First Local Vendor Libraries -->
+  <link rel="stylesheet" href="/static/vendor/leaflet.css">
+  <script src="/static/vendor/lucide.min.js"></script>
+  <script src="/static/vendor/leaflet.js"></script>
+  <script src="/static/vendor/chart.umd.min.js"></script>
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- ====================================================================
+       TOP BRAND HEADER
+       ==================================================================== -->
+  <header class="top-header">
+    <div class="brand-section">
+      <div class="brand-logo-badge">
+        <i data-lucide="waves"></i>
+      </div>
+      <div class="brand-text">
+        <h1>OceanEmbed</h1>
+        <p>From Surface Signals to the Ocean Below</p>
+      </div>
+    </div>
+
+    <div class="header-center-script">
+      <span class="cursive-tagline">Same Ocean, Deeper Insights</span>
+      <div class="header-slogan-box">
+        <i data-lucide="compass" style="width: 14px; height: 14px; color: var(--primary-ocean);"></i>
+        <span>A Clearer Tomorrow for Healthier Oceans</span>
+      </div>
+    </div>
+
+    <div class="header-badge-sih">
+      <span class="leaf-icon"><i data-lucide="leaf"></i></span>
+      <span>SIH 2026 &bull; PS 26066</span>
+    </div>
+  </header>
+
+  <!-- ====================================================================
+       APP CONTAINER: SIDEBAR + MAIN CONTENT
+       ==================================================================== -->
+  <div class="app-container">
+    
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar">
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="explore">
+          <i data-lucide="compass"></i>
+          <span>Explore</span>
+        </button>
+        <button class="nav-item" data-tab="predict">
+          <i data-lucide="activity"></i>
+          <span>Predict Profile</span>
+        </button>
+        <button class="nav-item" data-tab="datasources">
+          <i data-lucide="database"></i>
+          <span>Data Sources</span>
+        </button>
+        <button class="nav-item" data-tab="model">
+          <i data-lucide="cpu"></i>
+          <span>Model & Method</span>
+        </button>
+        <button class="nav-item" data-tab="validation">
+          <i data-lucide="shield-check"></i>
+          <span>Validation (ARGO)</span>
+        </button>
+        <button class="nav-item" data-tab="about">
+          <i data-lucide="info"></i>
+          <span>About Project</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <p class="sidebar-quote">"What we see on the surface is just the beginning."</p>
+        <div class="sidebar-artwork">
+          <svg viewBox="0 0 200 60" width="100%" height="100%" preserveAspectRatio="none">
+            <path d="M0,45 Q50,20 100,35 T200,25 L200,60 L0,60 Z" fill="#D2E8EE" opacity="0.6"/>
+            <path d="M0,50 Q60,35 120,45 T200,38 L200,60 L0,60 Z" fill="#B9DFE8" opacity="0.8"/>
+          </svg>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="main-content">
+
+      <!-- ==============================================================
+           VIEW 1: EXPLORE THE OCEAN (LANDING PAGE - REFERENCE DESIGN)
+           ============================================================== -->
+      <section id="view-explore" class="view-section active">
+        
+        <div class="explore-header">
+          <div class="explore-title-group">
+            <h2>Explore the Ocean</h2>
+            <p>Select a location and date to predict the subsurface temperature profile using satellite-derived ocean surface conditions.</p>
+          </div>
+          <div class="header-controls">
+            <div class="prototype-badge-pill" style="display: inline-flex; align-items: center; gap: 6px; background: #E0F2FE; color: #0369A1; padding: 6px 14px; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; border: 1px solid #BAE6FD;">
+              <i data-lucide="layers" style="width: 14px; height: 14px;"></i>
+              <span>Prototype Dataset: 2024 (Full Year)</span>
+            </div>
+            <div class="region-pill">
+              <i data-lucide="map-pin" style="width: 15px; height: 15px;"></i>
+              <span>Bay of Bengal</span>
+            </div>
+            <div class="date-select-pill">
+              <i data-lucide="calendar" style="width: 15px; height: 15px; color: var(--primary-ocean);"></i>
+              <input type="date" id="explore-date-input" value="2024-11-15" min="2024-01-01" max="2024-12-31">
+            </div>
+          </div>
+        </div>
+
+        <div class="explore-grid">
+          
+          <!-- LEFT COLUMN: MAP & CONTROLS -->
+          <div class="left-col">
+            <div class="app-card map-card">
+              <div class="map-wrapper">
+                <div id="map-container"></div>
+                <div id="map-tile-offline-hint" style="display: none; position: absolute; top: 10px; left: 10px; z-index: 1000; background: rgba(255,255,255,0.92); border: 1px solid #E2E8F0; border-radius: 6px; padding: 4px 10px; font-size: 0.72rem; color: #64748B; box-shadow: 0 2px 6px rgba(0,0,0,0.08);">
+                  <span>Map tiles require an internet connection &bull; Local model inference remains active</span>
+                </div>
+                
+                <!-- SST Colorbar Legend -->
+                <div class="sst-colorbar-legend">
+                  <div>Sea Surface Temperature (&deg;C)</div>
+                  <div class="colorbar-gradient"></div>
+                  <div class="colorbar-ticks">
+                    <span>24</span>
+                    <span>26</span>
+                    <span>28</span>
+                    <span>30</span>
+                    <span>32</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Coordinate & Action Inputs -->
+              <div class="map-controls-bar">
+                <div class="input-box">
+                  <label>Latitude (&deg;N)</label>
+                  <input type="number" id="input-lat" step="0.25" min="5.0" max="25.0" value="15.25">
+                </div>
+                <div class="input-box">
+                  <label>Longitude (&deg;E)</label>
+                  <input type="number" id="input-lon" step="0.25" min="80.0" max="100.0" value="87.50">
+                </div>
+                <div class="input-box">
+                  <label>Selected Date</label>
+                  <input type="text" id="display-date" value="2024-11-15" readonly style="color: var(--text-muted);">
+                </div>
+              </div>
+
+              <button id="btn-run-prediction" class="btn-predict-primary">
+                <span>Predict Subsurface Profile</span>
+                <i data-lucide="arrow-right" style="width: 18px; height: 18px;"></i>
+              </button>
+
+              <!-- Quick Demo Locations -->
+              <div class="quick-locations-section">
+                <div class="quick-locations-title">Quick Locations</div>
+                <div class="quick-btn-group" id="quick-buttons-container">
+                  <!-- Populated by JavaScript -->
+                  <button class="btn-quick-loc active" data-id="central_bay">Central Bay</button>
+                  <button class="btn-quick-loc" data-id="northern_bay">Northern Bay</button>
+                  <button class="btn-quick-loc" data-id="southern_bay">Southern Bay</button>
+                  <button class="btn-quick-loc" data-id="andaman_sea">Andaman Sea</button>
+                  <button class="btn-quick-loc" data-id="sri_lanka_east">Sri Lanka East</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: SURFACE CONDITIONS & PREDICTED PROFILE -->
+          <div class="right-col">
+            
+            <!-- SURFACE CONDITIONS CARD -->
+            <div class="app-card">
+              <div class="card-header-clean">
+                <h3>Acquired Surface Observations <span style="font-weight: 500; font-size: 0.85rem; color: var(--text-muted);">(5&times;5 Spatial Context &bull; 25 grid cells)</span></h3>
+                <i data-lucide="help-circle" style="width: 16px; height: 16px; color: var(--text-light); cursor: pointer;" title="5×5 Spatial Context: 25 grid cells surrounding the selected location used as CNN input."></i>
+              </div>
+
+              <div class="surface-and-grid-container">
+                <!-- 7 Surface Variables Grid -->
+                <div class="surface-cards-grid">
+                  <!-- SST -->
+                  <div class="surface-card-mini">
+                    <canvas class="surface-mini-heatmap" id="mini-sst"></canvas>
+                    <span class="var-name">SST</span>
+                    <span class="var-val" id="val-sst">&mdash;</span>
+                  </div>
+                  <!-- SSS -->
+                  <div class="surface-card-mini">
+                    <canvas class="surface-mini-heatmap" id="mini-sss"></canvas>
+                    <span class="var-name">SSS</span>
+                    <span class="var-val" id="val-sss">&mdash;</span>
+                  </div>
+                  <!-- SLA -->
+                  <div class="surface-card-mini">
+                    <canvas class="surface-mini-heatmap" id="mini-sla"></canvas>
+                    <span class="var-name">SLA</span>
+                    <span class="var-val" id="val-sla">&mdash;</span>
+                  </div>
+                  <!-- Current U -->
+                  <div class="surface-card-mini">
+                    <canvas class="surface-mini-heatmap" id="mini-cu"></canvas>
+                    <span class="var-name">Current U</span>
+                    <span class="var-val" id="val-cu">&mdash;</span>
+                  </div>
+                  <!-- Current V -->
+                  <div class="surface-card-mini">
+                    <canvas class="surface-mini-heatmap" id="mini-cv"></canvas>
+                    <span class="var-name">Current V</span>
+                    <span class="var-val" id="val-cv">&mdash;</span>
+                  </div>
+                  <!-- Wind U -->
+                  <div class="surface-card-mini">
+                    <canvas class="surface-mini-heatmap" id="mini-wu"></canvas>
+                    <span class="var-name">Wind U</span>
+                    <span class="var-val" id="val-wu">&mdash;</span>
+                  </div>
+                  <!-- Wind V -->
+                  <div class="surface-card-mini">
+                    <canvas class="surface-mini-heatmap" id="mini-wv"></canvas>
+                    <span class="var-name">Wind V</span>
+                    <span class="var-val" id="val-wv">&mdash;</span>
+                  </div>
+                </div>
+
+                <!-- 5x5 Spatial Neighborhood Diagram -->
+                <div class="grid-5x5-box">
+                  <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); margin-bottom: 6px;">5 &times; 5 Spatial Context</div>
+                  <div class="grid-matrix-table" id="matrix-5x5">
+                    <!-- 25 squares generated via JS -->
+                  </div>
+                  <div class="grid-matrix-legend">
+                    <div class="legend-item">
+                      <div class="legend-swatch swatch-center"></div>
+                      <span>Selected Location</span>
+                    </div>
+                    <div class="legend-item">
+                      <div class="legend-swatch swatch-neighbor"></div>
+                      <span>Neighboring Cells</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PREDICTED SUBSURFACE TEMPERATURE PROFILE CARD -->
+            <div class="app-card" style="margin-bottom: 0;">
+              <div class="card-header-clean">
+                <h3>Predicted Subsurface Temperature Profile</h3>
+                <div style="font-size: 0.76rem; font-weight: 700; color: var(--primary-ocean); background: var(--accent-light-blue); padding: 3px 10px; border-radius: var(--radius-pill);">
+                  OceanEmbed CNN (15 Depths)
+                </div>
+              </div>
+
+              <div class="profile-content-split">
+                <!-- Vertical Temperature Profile Chart -->
+                <div class="chart-wrapper">
+                  <canvas id="profile-chart"></canvas>
+                </div>
+
+                <!-- 15-Depth Data Table -->
+                <div class="depth-table-scroll">
+                  <table class="depth-data-table">
+                    <thead>
+                      <tr>
+                        <th>Depth (m)</th>
+                        <th>Predicted (&deg;C)</th>
+                        <th>Reference Target (&deg;C)</th>
+                      </tr>
+                    </thead>
+                    <tbody id="profile-table-body">
+                      <!-- Filled dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="callout-leaf-badge">
+                <i data-lucide="sprout" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
+                <span>Deeper knowledge today for a more resilient tomorrow.</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ==============================================================
+           VIEW 2: PREDICT PROFILE (IN-DEPTH RECONSTRUCTION STUDIO)
+           ============================================================== -->
+      <section id="view-predict" class="view-section">
+        <div class="page-title-banner">
+          <h2>Subsurface Thermal Profile Studio</h2>
+          <p>On-demand subsurface reconstruction from acquired 2024 satellite observations via OceanEmbed CNN.</p>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 16px; margin-bottom: 20px; font-size: 0.82rem; color: #475569; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <div><strong>Input:</strong> Acquired surface observations (7 variables)</div>
+          <span style="color: #CBD5E1;">|</span>
+          <div><strong>Model:</strong> OceanEmbed CNN (120,655 parameters)</div>
+          <span style="color: #CBD5E1;">|</span>
+          <div><strong>Output:</strong> Predicted Subsurface Temperature Profile (0&ndash;1000m)</div>
+        </div>
+
+        <div class="metrics-summary-grid">
+          <div class="stat-card-box">
+            <div class="stat-num" id="studio-sst">&mdash;</div>
+            <div class="stat-sub">Surface Temp (0m)</div>
+          </div>
+          <div class="stat-card-box">
+            <div class="stat-num" id="studio-mld">&mdash;</div>
+            <div class="stat-sub">Mixed Layer Depth (MLD)</div>
+          </div>
+          <div class="stat-card-box">
+            <div class="stat-num" id="studio-tc">&mdash;</div>
+            <div class="stat-sub">Thermocline Core Depth</div>
+          </div>
+          <div class="stat-card-box">
+            <div class="stat-num" id="studio-grad">&mdash;</div>
+            <div class="stat-sub">Max Vertical Gradient</div>
+          </div>
+          <div class="stat-card-box">
+            <div class="stat-num" id="studio-deep">&mdash;</div>
+            <div class="stat-sub">Abyssal Temp (1000m)</div>
+          </div>
+        </div>
+
+        <div class="app-card">
+          <div class="card-header-clean">
+            <h3>64-Dimensional Latent Ocean Embedding</h3>
+            <span style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted);">Extracted from CNN Bottleneck Layer</span>
+          </div>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px;">
+            The model compresses the 175 values of the 7 surface variables across the 5&times;5 spatial context (25 grid cells) into this 64-dimensional embedding, learning physical relationships between surface satellite forcing and internal thermal structure.
+          </p>
+          <div style="height: 140px;">
+            <canvas id="embedding-chart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==============================================================
+           VIEW 3: DATA SOURCES (SCIENTIFIC DATA CATALOG)
+           ============================================================== -->
+      <section id="view-datasources" class="view-section">
+        <div class="page-title-banner">
+          <h2>Acquired Scientific Data Catalog</h2>
+          <p>Verified oceanographic observational products harmonized to the 0.25&deg; Bay of Bengal PoC domain (2024).</p>
+        </div>
+
+        <div class="catalog-cards-grid" id="catalog-container">
+          <!-- Populated via JS from /api/data-catalog -->
+        </div>
+      </section>
+
+      <!-- ==============================================================
+           VIEW 4: MODEL & METHOD
+           ============================================================== -->
+      <section id="view-model" class="view-section">
+        <div class="page-title-banner">
+          <h2>Model Architecture & Methodology</h2>
+          <p>Deep CNN encoder with 64-dimensional ocean embedding bottleneck and vertical profile decoder.</p>
+        </div>
+
+        <div class="flowchart-pipeline">
+          <div class="flow-step-box">
+            <div class="step-dim">[B, 7, 5, 5]</div>
+            <div class="step-name">7 Surface Variables</div>
+          </div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-step-box">
+            <div class="step-dim">5 &times; 5 Context</div>
+            <div class="step-name">Spatial Feature Extraction</div>
+          </div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-step-box" style="background: var(--accent-light-teal); border-color: var(--primary-teal);">
+            <div class="step-dim" style="color: var(--primary-teal);">[B, 64]</div>
+            <div class="step-name" style="font-weight: 800;">64-D Ocean Embedding</div>
+          </div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-step-box">
+            <div class="step-dim">[B, 128 &rarr; 64]</div>
+            <div class="step-name">Profile Decoder MLP</div>
+          </div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-step-box" style="background: var(--accent-light-blue); border-color: var(--primary-ocean);">
+            <div class="step-dim" style="color: var(--primary-ocean);">[B, 15]</div>
+            <div class="step-name" style="font-weight: 800;">15-Depth Profile (0–1000m)</div>
+          </div>
+        </div>
+
+        <div class="app-card">
+          <div class="card-header-clean">
+            <h3>Layer Specifications & Trainable Parameters</h3>
+            <span style="font-weight: 700; color: var(--primary-teal);">Total Parameters: 120,655</span>
+          </div>
+          <div class="table-responsive">
+            <table class="depth-data-table" style="width: 100%;">
+              <thead>
+                <tr>
+                  <th style="text-align: left;">Component</th>
+                  <th style="text-align: left;">Layer Details</th>
+                  <th style="text-align: center;">Output Tensor Shape</th>
+                  <th style="text-align: right;">Parameters</th>
+                </tr>
+              </thead>
+              <tbody id="model-specs-table">
+                <!-- Filled dynamically from /api/model-specs -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- HELD-OUT TEST EVALUATION BENCHMARK -->
+        <div class="app-card" style="margin-top: 20px;">
+          <div class="card-header-clean">
+            <h3>Held-Out Test Performance (Nov&ndash;Dec 2024)</h3>
+            <span style="font-size: 0.78rem; font-weight: 700; color: #0F5B78; background: var(--accent-light-blue); padding: 4px 10px; border-radius: var(--radius-pill);">
+              Temporal Split &bull; 61 Daily Slices Untouched During Training
+            </span>
+          </div>
+          <p style="font-size: 0.83rem; color: #475569; margin-bottom: 14px;">
+            The model was evaluated on the held-out test set spanning November 1 to December 31, 2024 (65,643 test profiles &bull; 984,645 points). Overall, OceanEmbed improves RMSE by 32.51% versus the climatological baseline, with strongest gains in the upper and mid-depth thermocline layers.
+          </p>
+          <div class="metrics-summary-grid" style="margin-bottom: 0;">
+            <div class="stat-card-box">
+              <div class="stat-num" style="color: var(--primary-teal);">0.9753 &deg;C</div>
+              <div class="stat-sub">Held-Out Test RMSE</div>
+            </div>
+            <div class="stat-card-box">
+              <div class="stat-num" style="color: #64748B;">1.4451 &deg;C</div>
+              <div class="stat-sub">Climatology Baseline RMSE</div>
+            </div>
+            <div class="stat-card-box">
+              <div class="stat-num" style="color: var(--accent-green);">+32.51%</div>
+              <div class="stat-sub">RMSE Improvement</div>
+            </div>
+            <div class="stat-card-box">
+              <div class="stat-num" style="color: #0F5B78;">0.9329</div>
+              <div class="stat-sub">Test R&sup2; Score</div>
+            </div>
+            <div class="stat-card-box">
+              <div class="stat-num" style="color: #0F5B78;">65,643</div>
+              <div class="stat-sub">Held-Out Test Profiles</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==============================================================
+           VIEW 5: VALIDATION (ARGO) (INDEPENDENT OBSERVATIONAL VALIDATION)
+           ============================================================== -->
+      <section id="view-validation" class="view-section">
+        <div class="page-title-banner">
+          <h2>Independent ARGO Validation</h2>
+          <p>Verified evaluation against in-situ autonomous robotic profiling floats across the full year 2024.</p>
+        </div>
+
+        <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; font-size: 0.84rem; color: #166534; line-height: 1.5;">
+          <strong>Methodological Independence:</strong> ARGO observations were not used for model training, normalization, hyperparameter tuning, or checkpoint selection. This represents a completely blind observational benchmark comparing model predictions directly against in-situ autonomous profiling floats.
+        </div>
+
+        <div class="metrics-summary-grid">
+          <div class="stat-card-box">
+            <div class="stat-num" id="argo-num-floats">672</div>
+            <div class="stat-sub">Matched ARGO Profiles</div>
+          </div>
+          <div class="stat-card-box">
+            <div class="stat-num" id="argo-num-points">9,983</div>
+            <div class="stat-sub">Temperature Comparisons</div>
+          </div>
+          <div class="stat-card-box">
+            <div class="stat-num" style="color: var(--primary-teal);" id="argo-rmse">0.8464 &deg;C</div>
+            <div class="stat-sub">Overall ARGO RMSE</div>
+          </div>
+          <div class="stat-card-box">
+            <div class="stat-num" style="color: var(--accent-green);" id="argo-imp">+36.28%</div>
+            <div class="stat-sub">Improvement over Baseline</div>
+          </div>
+          <div class="stat-card-box">
+            <div class="stat-num" id="argo-bias">-0.0065 &deg;C</div>
+            <div class="stat-sub">Global Mean Bias</div>
+          </div>
+        </div>
+
+        <div class="app-card">
+          <div class="card-header-clean">
+            <h3>Per-Depth Observational Error & Correlation</h3>
+            <span style="font-size: 0.78rem; font-weight: 700; color: #166534; background: #DCFCE7; padding: 4px 10px; border-radius: var(--radius-pill);">
+              Zero Training Leakage Verified
+            </span>
+          </div>
+          <div class="table-responsive">
+            <table class="depth-data-table" style="width: 100%;">
+              <thead>
+                <tr>
+                  <th style="text-align: left;">Depth</th>
+                  <th style="text-align: center;">Profiles (N)</th>
+                  <th style="text-align: right;">OceanEmbed RMSE</th>
+                  <th style="text-align: right;">Climatology RMSE</th>
+                  <th style="text-align: right;">Improvement</th>
+                  <th style="text-align: right;">Bias</th>
+                  <th style="text-align: right;">Pearson R</th>
+                  <th style="text-align: right;">R&sup2; Score</th>
+                </tr>
+              </thead>
+              <tbody id="argo-table-body">
+                <!-- Loaded from /api/validation-argo -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==============================================================
+           VIEW 6: ABOUT PROJECT
+           ============================================================== -->
+      <section id="view-about" class="view-section">
+        <div class="page-title-banner">
+          <h2>About OceanEmbed</h2>
+          <p>Smart India Hackathon 2026 &bull; Problem Statement 26066</p>
+        </div>
+
+        <div class="app-card" style="margin-bottom: 20px;">
+          <h3 style="color: #0B3B4E; margin-bottom: 8px;">Executive Overview</h3>
+          <p style="font-size: 0.9rem; line-height: 1.6; color: #334155;">
+            <strong>OceanEmbed</strong> is a deep learning framework designed to reconstruct subsurface ocean temperature profiles down to 1000 meters strictly from surface satellite observations (SST, SSS, SLA, ocean currents, and surface winds). By learning a 64-dimensional latent ocean embedding over localized 5&times;5 spatial patches, OceanEmbed captures nonlinear upper-ocean physics and thermocline displacements without requiring computationally heavy numerical ocean models.
+          </p>
+        </div>
+
+        <div class="app-card">
+          <h3 style="color: #0B3B4E; margin-bottom: 12px;">Institutional & Operational Context</h3>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+            <div style="background: #F8FAFC; padding: 14px; border-radius: 10px; border: 1px solid #E2E8F0;">
+              <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Organization</div>
+              <div style="font-size: 0.95rem; font-weight: 700; color: #0F5B78; margin-top: 4px;">MoES / INCOIS</div>
+              <p style="font-size: 0.78rem; color: #64748B; margin-top: 4px;">Ministry of Earth Sciences / Indian National Centre for Ocean Information Services</p>
+            </div>
+            <div style="background: #F8FAFC; padding: 14px; border-radius: 10px; border: 1px solid #E2E8F0;">
+              <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Domain of Study</div>
+              <div style="font-size: 0.95rem; font-weight: 700; color: #0F5B78; margin-top: 4px;">Bay of Bengal</div>
+              <p style="font-size: 0.78rem; color: #64748B; margin-top: 4px;">5&deg;N &ndash; 25&deg;N, 80&deg;E &ndash; 100&deg;E, standardized at 0.25&deg; horizontal resolution</p>
+            </div>
+            <div style="background: #F8FAFC; padding: 14px; border-radius: 10px; border: 1px solid #E2E8F0;">
+              <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Temporal Scope</div>
+              <div style="font-size: 0.95rem; font-weight: 700; color: #0F5B78; margin-top: 4px;">Full Year 2024</div>
+              <p style="font-size: 0.78rem; color: #64748B; margin-top: 4px;">366 daily slices (Train: Jan&ndash;Aug, Val: Sep&ndash;Oct, Test: Nov&ndash;Dec)</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- TOAST NOTIFICATIONS CONTAINER -->
+  <div id="toast-container"></div>
+
+  <!-- ====================================================================
+       APP FOOTER
+       ==================================================================== -->
+  <footer class="app-footer">
+    PEOPLE &nbsp;|&nbsp; OCEANS &nbsp;|&nbsp; RESILIENT TOMORROW
+  </footer>
+
+  <!-- Application Logic -->
+  <script src="/static/app.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
+</body>
+</html>

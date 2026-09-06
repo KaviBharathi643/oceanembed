@@ -1,0 +1,332 @@
+{
+  "validation_type": "Independent In-Situ ARGO Observational Validation",
+  "dataset_summary": {
+    "total_raw_observations": 167058,
+    "unique_platforms": 30,
+    "temporal_range": [
+      "2024-01-01 04:17:58",
+      "2024-12-31 14:08:25"
+    ],
+    "latitude_range": [
+      5.005985,
+      18.162889
+    ],
+    "longitude_range": [
+      80.63333333333334,
+      91.41666666666667
+    ],
+    "temperature_range": [
+      2.566999912261963,
+      32.763999938964844
+    ],
+    "pressure_range": [
+      0.0,
+      2061.5
+    ],
+    "temp_qc_distribution": {
+      "1": 163821,
+      " ": 2123,
+      "4": 1042,
+      "3": 72
+    },
+    "pres_qc_distribution": {
+      "1": 165522,
+      " ": 1532,
+      "4": 4
+    }
+  },
+  "quality_control": {
+    "criteria": "temp_qc == '1' and pres_qc == '1', pres >= 0, -2 < temp < 40",
+    "passed_observations": 163821,
+    "passed_percentage": 98.06234960313185,
+    "total_valid_profiles": 852
+  },
+  "collocation": {
+    "matched_profiles": 672,
+    "matched_percentage": 78.87323943661971,
+    "mean_spatial_offset_km": 10.440014083546403,
+    "max_spatial_offset_km": 18.58719024076836,
+    "temporal_matching": "Exact calendar date (dt = 0 days)"
+  },
+  "overall_metrics": {
+    "total_temperature_comparisons": 9983,
+    "oceanembed_rmse": 0.8463694453239441,
+    "baseline_rmse": 1.328269600868225,
+    "improvement_pct": 36.28029695396826,
+    "mae": 0.5453475117683411,
+    "bias": -0.006536032073199749,
+    "pearson_r": 0.9950209369228791,
+    "r2": 0.9900278449058533
+  },
+  "per_depth_metrics": {
+    "0.0m": {
+      "depth_m": 0.0,
+      "n_matched": 655,
+      "oceanembed_rmse": 0.5165174603462219,
+      "baseline_rmse": 1.0441375970840454,
+      "improvement_pct": 50.53166730240382,
+      "bias": -0.3316827118396759,
+      "mae": 0.3993591368198395,
+      "pearson_r": 0.9302242824814537,
+      "r2": 0.7542977333068848,
+      "pred_mean": 29.186784744262695,
+      "argo_mean": 29.518468856811523,
+      "pred_std": 0.8666841387748718,
+      "argo_std": 1.0420304536819458,
+      "std_ratio": 0.8317263126373291
+    },
+    "5.0m": {
+      "depth_m": 5.0,
+      "n_matched": 655,
+      "oceanembed_rmse": 0.5027247071266174,
+      "baseline_rmse": 1.012284755706787,
+      "improvement_pct": 50.337619499603136,
+      "bias": -0.36314934492111206,
+      "mae": 0.41416436433792114,
+      "pearson_r": 0.9438612988938604,
+      "r2": 0.7511540651321411,
+      "pred_mean": 29.10874366760254,
+      "argo_mean": 29.471895217895508,
+      "pred_std": 0.8510798811912537,
+      "argo_std": 1.0077781677246094,
+      "std_ratio": 0.8445111513137817
+    },
+    "10.0m": {
+      "depth_m": 10.0,
+      "n_matched": 663,
+      "oceanembed_rmse": 0.4845472276210785,
+      "baseline_rmse": 0.9872308969497681,
+      "improvement_pct": 50.91855115979691,
+      "bias": -0.3475557267665863,
+      "mae": 0.40044862031936646,
+      "pearson_r": 0.9436570128854541,
+      "r2": 0.7575637102127075,
+      "pred_mean": 29.093917846679688,
+      "argo_mean": 29.441471099853516,
+      "pred_std": 0.8395683169364929,
+      "argo_std": 0.984095573425293,
+      "std_ratio": 0.8531369566917419
+    },
+    "20.0m": {
+      "depth_m": 20.0,
+      "n_matched": 667,
+      "oceanembed_rmse": 0.4576191306114197,
+      "baseline_rmse": 0.8968290686607361,
+      "improvement_pct": 48.97365098849916,
+      "bias": -0.27269411087036133,
+      "mae": 0.36550280451774597,
+      "pearson_r": 0.9126899541139464,
+      "r2": 0.7396280765533447,
+      "pred_mean": 29.06000518798828,
+      "argo_mean": 29.332698822021484,
+      "pred_std": 0.7913434505462646,
+      "argo_std": 0.8968237042427063,
+      "std_ratio": 0.8823845982551575
+    },
+    "30.0m": {
+      "depth_m": 30.0,
+      "n_matched": 668,
+      "oceanembed_rmse": 0.5601995587348938,
+      "baseline_rmse": 0.8711447715759277,
+      "improvement_pct": 35.69386202921524,
+      "bias": -0.2073928266763687,
+      "mae": 0.404171884059906,
+      "pearson_r": 0.8012639258424162,
+      "r2": 0.583398163318634,
+      "pred_mean": 28.916553497314453,
+      "argo_mean": 29.123947143554688,
+      "pred_std": 0.6615163087844849,
+      "argo_std": 0.8679249286651611,
+      "std_ratio": 0.7621814608573914
+    },
+    "50.0m": {
+      "depth_m": 50.0,
+      "n_matched": 668,
+      "oceanembed_rmse": 1.094497561454773,
+      "baseline_rmse": 1.5261174440383911,
+      "improvement_pct": 28.282219318683065,
+      "bias": -0.013945939019322395,
+      "mae": 0.7395926117897034,
+      "pearson_r": 0.7364609883409677,
+      "r2": 0.47142094373703003,
+      "pred_mean": 28.08019256591797,
+      "argo_mean": 28.094135284423828,
+      "pred_std": 0.7079280018806458,
+      "argo_std": 1.505427360534668,
+      "std_ratio": 0.47025051712989807
+    },
+    "75.0m": {
+      "depth_m": 75.0,
+      "n_matched": 668,
+      "oceanembed_rmse": 1.5314581394195557,
+      "baseline_rmse": 2.409080982208252,
+      "improvement_pct": 36.42977754879103,
+      "bias": 0.3196342885494232,
+      "mae": 1.187890887260437,
+      "pearson_r": 0.7763581510002175,
+      "r2": 0.5733187198638916,
+      "pred_mean": 25.71601104736328,
+      "argo_mean": 25.39637565612793,
+      "pred_std": 1.5762355327606201,
+      "argo_std": 2.3445167541503906,
+      "std_ratio": 0.6723071932792664
+    },
+    "100.0m": {
+      "depth_m": 100.0,
+      "n_matched": 668,
+      "oceanembed_rmse": 1.551259160041809,
+      "baseline_rmse": 2.4284095764160156,
+      "improvement_pct": 36.12036556324056,
+      "bias": 0.6594155430793762,
+      "mae": 1.1904584169387817,
+      "pearson_r": 0.7852027423355834,
+      "r2": 0.5286301374435425,
+      "pred_mean": 22.50020408630371,
+      "argo_mean": 21.840787887573242,
+      "pred_std": 1.8923646211624146,
+      "argo_std": 2.259453773498535,
+      "std_ratio": 0.8375319242477417
+    },
+    "125.0m": {
+      "depth_m": 125.0,
+      "n_matched": 668,
+      "oceanembed_rmse": 1.3361523151397705,
+      "baseline_rmse": 2.0448946952819824,
+      "improvement_pct": 34.659113830039026,
+      "bias": 0.5229530334472656,
+      "mae": 1.0476503372192383,
+      "pearson_r": 0.7738275740191841,
+      "r2": 0.503581702709198,
+      "pred_mean": 19.448055267333984,
+      "argo_mean": 18.92510223388672,
+      "pred_std": 1.730158805847168,
+      "argo_std": 1.896409273147583,
+      "std_ratio": 0.9123340845108032
+    },
+    "150.0m": {
+      "depth_m": 150.0,
+      "n_matched": 668,
+      "oceanembed_rmse": 1.0364699363708496,
+      "baseline_rmse": 1.5834063291549683,
+      "improvement_pct": 34.54175865748923,
+      "bias": 0.27696096897125244,
+      "mae": 0.7942189574241638,
+      "pearson_r": 0.7636178941149768,
+      "r2": 0.523118793964386,
+      "pred_mean": 17.042945861816406,
+      "argo_mean": 16.7659854888916,
+      "pred_std": 1.3878573179244995,
+      "argo_std": 1.5008994340896606,
+      "std_ratio": 0.9246837496757507
+    },
+    "200.0m": {
+      "depth_m": 200.0,
+      "n_matched": 668,
+      "oceanembed_rmse": 0.6312540769577026,
+      "baseline_rmse": 0.9129099249839783,
+      "improvement_pct": 30.852534332039248,
+      "bias": 0.11954457312822342,
+      "mae": 0.4780667722225189,
+      "pearson_r": 0.7093085692399892,
+      "r2": 0.46037137508392334,
+      "pred_mean": 14.12883472442627,
+      "argo_mean": 14.00929069519043,
+      "pred_std": 0.7409610748291016,
+      "argo_std": 0.8593235611915588,
+      "std_ratio": 0.8622608780860901
+    },
+    "300.0m": {
+      "depth_m": 300.0,
+      "n_matched": 668,
+      "oceanembed_rmse": 0.2794608771800995,
+      "baseline_rmse": 0.3349177837371826,
+      "improvement_pct": 16.55836424637319,
+      "bias": -0.07079120725393295,
+      "mae": 0.2014351189136505,
+      "pearson_r": 0.5584852612338501,
+      "r2": 0.25857919454574585,
+      "pred_mean": 11.688945770263672,
+      "argo_mean": 11.759737968444824,
+      "pred_std": 0.20587266981601715,
+      "argo_std": 0.32455524802207947,
+      "std_ratio": 0.6343224048614502
+    },
+    "500.0m": {
+      "depth_m": 500.0,
+      "n_matched": 668,
+      "oceanembed_rmse": 0.21239687502384186,
+      "baseline_rmse": 0.19746962189674377,
+      "improvement_pct": -7.559265563846318,
+      "bias": -0.10252117365598679,
+      "mae": 0.16792261600494385,
+      "pearson_r": 0.35357489754809523,
+      "r2": -0.19644498825073242,
+      "pred_mean": 9.888176918029785,
+      "argo_mean": 9.990697860717773,
+      "pred_std": 0.10878395289182663,
+      "argo_std": 0.1941787749528885,
+      "std_ratio": 0.560225784778595
+    },
+    "700.0m": {
+      "depth_m": 700.0,
+      "n_matched": 667,
+      "oceanembed_rmse": 0.26289376616477966,
+      "baseline_rmse": 0.18405328691005707,
+      "improvement_pct": -42.83568121945589,
+      "bias": -0.1904325634241104,
+      "mae": 0.21602430939674377,
+      "pearson_r": 0.24769458185607718,
+      "r2": -1.1290473937988281,
+      "pred_mean": 8.39765739440918,
+      "argo_mean": 8.588089942932129,
+      "pred_std": 0.0933944433927536,
+      "argo_std": 0.1801721304655075,
+      "std_ratio": 0.5183623433113098
+    },
+    "1000.0m": {
+      "depth_m": 1000.0,
+      "n_matched": 664,
+      "oceanembed_rmse": 0.20086605846881866,
+      "baseline_rmse": 0.16368530690670013,
+      "improvement_pct": -22.714776460242337,
+      "bias": -0.1135178878903389,
+      "mae": 0.16378076374530792,
+      "pearson_r": 0.18620568842214433,
+      "r2": -0.5063233375549316,
+      "pred_mean": 6.613069534301758,
+      "argo_mean": 6.726587295532227,
+      "pred_std": 0.07052939385175705,
+      "argo_std": 0.16366185247898102,
+      "std_ratio": 0.43094584345817566
+    }
+  },
+  "physical_sanity": {
+    "prediction_range": [
+      6.405301094055176,
+      31.382619857788086
+    ],
+    "prediction_mean": 20.570770263671875,
+    "argo_range": [
+      6.163786888122559,
+      32.763999938964844
+    ],
+    "argo_mean": 20.577306747436523,
+    "nan_count": 0,
+    "inf_count": 0,
+    "prediction_monotonic_pct": 55.05952380952381,
+    "argo_monotonic_pct": 28.422619047619047
+  },
+  "key_depth_observations": {
+    "best_depth_m": 1000.0,
+    "best_depth_rmse": 0.20086605846881866,
+    "worst_depth_m": 100.0,
+    "worst_depth_rmse": 1.551259160041809
+  },
+  "independence_audit": {
+    "ARGO used in model training": false,
+    "ARGO used in data normalization": false,
+    "ARGO used for hyperparameter tuning": false,
+    "ARGO used for checkpoint selection": false,
+    "Surface satellite inputs overlap with ARGO": false
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "project": "OceanEmbed",
+  "domain": "Bay of Bengal (5.0N to 25.0N, 80.0E to 100.0E)",
+  "period": "2024-01-01 to 2024-12-31 (366 days)",
+  "total_days_processed": 366,
+  "grid": {
+    "num_lats": 81,
+    "num_lons": 81,
+    "lat_range": [
+      5.0,
+      25.0
+    ],
+    "lon_range": [
+      80.0,
+      100.0
+    ],
+    "resolution_deg": 0.25,
+    "max_interior_centers": 5929
+  },
+  "target_depths_m": [
+    0.0,
+    5.0,
+    10.0,
+    20.0,
+    30.0,
+    50.0,
+    75.0,
+    100.0,
+    125.0,
+    150.0,
+    200.0,
+    300.0,
+    500.0,
+    700.0,
+    1000.0
+  ],
+  "input_channels": [
+    "sst",
+    "sss",
+    "sla",
+    "current_u",
+    "current_v",
+    "wind_u",
+    "wind_v"
+  ],
+  "target_channel": "thetao",
+  "missing_data_strategy": "Strategy A: Complete-case pure-ocean (bathymetry >= 1000m, no padding)",
+  "sample_counts": {
+    "train": 460750,
+    "val": 92240,
+    "test": 65643,
+    "total": 618633
+  },
+  "tensor_shapes": {
+    "X": [
+      7,
+      5,
+      5
+    ],
+    "y": [
+      15
+    ]
+  },
+  "normalization_stats": {
+    "sst": {
+      "mean": 29.325048446655273,
+      "std": 1.2084558010101318,
+      "min": 23.895000457763672,
+      "max": 33.0724983215332
+    },
+    "sss": {
+      "mean": 30.49677085876465,
+      "std": 1.6829404830932617,
+      "min": 11.680560111999512,
+      "max": 33.78520202636719
+    },
+    "sla": {
+      "mean": 0.11446709930896759,
+      "std": 0.09904249012470245,
+      "min": -0.2874000072479248,
+      "max": 0.4671750068664551
+    },
+    "current_u": {
+      "mean": 0.0011225234484300017,
+      "std": 0.26394906640052795,
+      "min": -1.3399338722229004,
+      "max": 1.7079297304153442
+    },
+    "current_v": {
+      "mean": 0.022773364558815956,
+      "std": 0.19923250377178192,
+      "min": -1.106615662574768,
+      "max": 1.3005229234695435
+    },
+    "wind_u": {
+      "mean": 0.5085185170173645,
+      "std": 4.575603008270264,
+      "min": -10.733396530151367,
+      "max": 15.445969581604004
+    },
+    "wind_v": {
+      "mean": 1.4315687417984009,
+      "std": 4.452476978302002,
+      "min": -9.472881317138672,
+      "max": 15.246927261352539
+    }
+  },
+  "daily_sample_counts_summary": {
+    "min_per_day": 209,
+    "max_per_day": 2235,
+    "mean_per_day": 1690.2540983606557
+  },
+  "execution_time_seconds": 76.61
+}
