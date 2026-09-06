@@ -60,6 +60,7 @@ data/processed/*
 !data/processed/normalization.json
 !data/processed/preprocessing_report.json
 !data/processed/sample_metadata.csv
+!data/processed/argo_profiles.json
 **/.staging/
 *.partial
 

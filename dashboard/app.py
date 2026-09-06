@@ -88,6 +88,7 @@ elif menu == "Predict Profile":
                 import pandas as pd
                 df_prof = pd.DataFrame(res["profile"])
                 st.dataframe(df_prof, use_container_width=True)
+                st.caption("💡 Scientific Reference: GLORYS is used as the reconstruction training/reference dataset. Argo observations provide independent validation.")
             with c_right:
                 st.write("**Physical Diagnostics**")
                 diag = res["diagnostics"]

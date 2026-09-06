@@ -116,7 +116,7 @@
             </div>
             <div class="date-select-pill">
               <i data-lucide="calendar" style="width: 15px; height: 15px; color: var(--primary-ocean);"></i>
-              <input type="date" id="explore-date-input" value="2024-11-15" min="2024-01-01" max="2024-12-31">
+              <input type="date" id="explore-date-input" value="2024-04-06" min="2024-01-01" max="2024-12-31">
             </div>
           </div>
         </div>
@@ -150,15 +150,15 @@
               <div class="map-controls-bar">
                 <div class="input-box">
                   <label>Latitude (&deg;N)</label>
-                  <input type="number" id="input-lat" step="0.25" min="5.0" max="25.0" value="15.25">
+                  <input type="number" id="input-lat" step="0.25" min="5.0" max="25.0" value="14.00">
                 </div>
                 <div class="input-box">
                   <label>Longitude (&deg;E)</label>
-                  <input type="number" id="input-lon" step="0.25" min="80.0" max="100.0" value="87.50">
+                  <input type="number" id="input-lon" step="0.25" min="80.0" max="100.0" value="87.00">
                 </div>
                 <div class="input-box">
                   <label>Selected Date</label>
-                  <input type="text" id="display-date" value="2024-11-15" readonly style="color: var(--text-muted);">
+                  <input type="text" id="display-date" value="2024-04-06" readonly style="color: var(--text-muted);">
                 </div>
               </div>
 
@@ -262,10 +262,21 @@
             <!-- PREDICTED SUBSURFACE TEMPERATURE PROFILE CARD -->
             <div class="app-card" style="margin-bottom: 0;">
               <div class="card-header-clean">
-                <h3>Predicted Subsurface Temperature Profile</h3>
-                <div style="font-size: 0.76rem; font-weight: 700; color: var(--primary-ocean); background: var(--accent-light-blue); padding: 3px 10px; border-radius: var(--radius-pill);">
+                <div>
+                  <h3 id="profile-card-title">OceanEmbed Prediction vs Argo Observation</h3>
+                  <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                    Independent Validation with Argo Float Observations
+                  </div>
+                </div>
+                <div id="argo-match-badge" style="font-size: 0.76rem; font-weight: 700; color: var(--primary-ocean); background: var(--accent-light-blue); padding: 3px 10px; border-radius: var(--radius-pill);">
                   OceanEmbed CNN (15 Depths)
                 </div>
+              </div>
+
+              <!-- In-Situ Argo Observation Status / Collocation Banner -->
+              <div id="argo-observation-banner" class="argo-obs-banner unmatched">
+                <i data-lucide="info" style="width: 14px; height: 14px; flex-shrink: 0;"></i>
+                <span id="argo-observation-text">Checking for nearby in-situ Argo observations...</span>
               </div>
 
               <div class="profile-content-split">
@@ -281,7 +292,7 @@
                       <tr>
                         <th>Depth (m)</th>
                         <th>Predicted (&deg;C)</th>
-                        <th>Reference Target (&deg;C)</th>
+                        <th>Argo Observation (&deg;C)</th>
                       </tr>
                     </thead>
                     <tbody id="profile-table-body">
@@ -291,7 +302,12 @@
                 </div>
               </div>
 
-              <div class="callout-leaf-badge">
+              <!-- Scientific distinction note (Requirement 10) -->
+              <div class="scientific-note-box" style="margin-top: 12px; padding: 8px 12px; background: #F8FAFC; border-radius: 6px; font-size: 0.74rem; color: #475569; border-left: 3px solid #0F5B78; line-height: 1.45;">
+                <strong>Scientific Reference:</strong> GLORYS is used as the reconstruction training/reference dataset. Argo observations provide independent validation.
+              </div>
+
+              <div class="callout-leaf-badge" style="margin-top: 10px;">
                 <i data-lucide="sprout" style="width: 16px; height: 16px; flex-shrink: 0;"></i>
                 <span>Deeper knowledge today for a more resilient tomorrow.</span>
               </div>

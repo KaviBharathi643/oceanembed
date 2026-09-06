@@ -42,12 +42,30 @@ class OceanEmbedEngine:
         normalization_path: str = "data/processed/normalization.json",
         metadata_path: str = "data/processed/sample_metadata.csv",
         processed_dir: str = "data/processed",
+        argo_profiles_path: str = "data/processed/argo_profiles.json",
     ):
         self.checkpoint_path = checkpoint_path
         self.normalization_path = normalization_path
         self.metadata_path = metadata_path
         self.processed_dir = processed_dir
+        self.argo_profiles_path = argo_profiles_path
         self.device = torch.device("cpu")
+
+        # Load preprocessed in-situ ARGO float profiles for independent observational validation
+        self.argo_profiles: List[Dict[str, Any]] = []
+        self.argo_by_date: Dict[str, List[Dict[str, Any]]] = {}
+        if os.path.exists(self.argo_profiles_path):
+            try:
+                with open(self.argo_profiles_path, "r", encoding="utf-8") as f:
+                    self.argo_profiles = json.load(f)
+                for p in self.argo_profiles:
+                    d = p["date"]
+                    if d not in self.argo_by_date:
+                        self.argo_by_date[d] = []
+                    self.argo_by_date[d].append(p)
+                print(f"[OceanEmbedEngine] Loaded {len(self.argo_profiles):,} in-situ ARGO profiles across {len(self.argo_by_date)} dates.")
+            except Exception as e:
+                print(f"[OceanEmbedEngine] Warning: Could not load ARGO profiles: {e}")
 
         # 1. Load normalization parameters
         with open(self.normalization_path, "r") as f:
@@ -113,23 +131,23 @@ class OceanEmbedEngine:
         return [
             {
                 "id": "central_bay",
-                "name": "Central Bay",
-                "lat": 15.25,
-                "lon": 87.50,
-                "default_date": "2024-11-15",
-                "description": "Deep open-ocean basin with well-defined thermocline (matching design showcase)",
+                "name": "Central Bay (Argo Collocated)",
+                "lat": 14.00,
+                "lon": 87.00,
+                "default_date": "2024-04-06",
+                "description": "Deep open-ocean basin with in-situ Argo float #1902669 collocated at 9.1 km",
                 "depth_bathymetry_m": "> 3000 m",
-                "tag": "Primary Showcase",
+                "tag": "Argo Collocated (9.1 km)",
             },
             {
                 "id": "northern_bay",
-                "name": "Northern Bay",
-                "lat": 19.00,
-                "lon": 89.00,
-                "default_date": "2024-05-15",
-                "description": "Pre-monsoon freshwater plume area with low SSS and strong stratification",
+                "name": "Northern Bay (Argo Collocated)",
+                "lat": 17.50,
+                "lon": 88.50,
+                "default_date": "2024-05-24",
+                "description": "Pre-monsoon northern plume with in-situ Argo float #7902190 collocated at 10.2 km",
                 "depth_bathymetry_m": "> 2000 m",
-                "tag": "Barrier Layer Zone",
+                "tag": "Argo Collocated (10.2 km)",
             },
             {
                 "id": "southern_bay",
@@ -137,19 +155,19 @@ class OceanEmbedEngine:
                 "lat": 7.50,
                 "lon": 85.50,
                 "default_date": "2024-07-15",
-                "description": "Southwest monsoon current corridor with active upwelling dynamics",
+                "description": "Southwest monsoon current corridor without nearby in-situ Argo observation",
                 "depth_bathymetry_m": "> 3500 m",
-                "tag": "Upwelling Corridor",
+                "tag": "Satellite Model Only",
             },
             {
                 "id": "andaman_sea",
-                "name": "Andaman Sea",
-                "lat": 10.25,
-                "lon": 95.75,
-                "default_date": "2024-03-15",
-                "description": "Deep Andaman back-arc basin with warm intermediate waters",
+                "name": "Andaman Sea (Argo Collocated)",
+                "lat": 10.50,
+                "lon": 91.25,
+                "default_date": "2024-08-27",
+                "description": "Deep Andaman back-arc basin with in-situ Argo float #7901127 collocated at 9.3 km",
                 "depth_bathymetry_m": "> 2500 m",
-                "tag": "Semi-enclosed Basin",
+                "tag": "Argo Collocated (9.3 km)",
             },
             {
                 "id": "sri_lanka_east",
@@ -157,9 +175,9 @@ class OceanEmbedEngine:
                 "lat": 8.25,
                 "lon": 83.50,
                 "default_date": "2024-09-15",
-                "description": "East India Coastal Current (EICC) mesoscale eddy dynamic region",
+                "description": "East India Coastal Current (EICC) eddy dynamic region (model inference)",
                 "depth_bathymetry_m": "> 3000 m",
-                "tag": "Eddy Activity",
+                "tag": "Satellite Model Only",
             },
         ]
 
@@ -273,18 +291,69 @@ class OceanEmbedEngine:
                 "grid_5x5": grid_5x5_phys,
             }
 
+        # Match nearest in-situ ARGO profile on the selected date (following validate_argo.py collocation logic)
+        argo_candidates = self.argo_by_date.get(str(date), [])
+        best_argo = None
+        best_argo_dist = float("inf")
+        for p in argo_candidates:
+            dlat_a = (p["lat"] - actual_lat) * 111.0
+            dlon_a = (p["lon"] - actual_lon) * 111.0 * np.cos(np.radians(actual_lat))
+            d_a = float(np.sqrt(dlat_a ** 2 + dlon_a ** 2))
+            if d_a < best_argo_dist:
+                best_argo_dist = d_a
+                best_argo = p
+
+        # Collocation threshold: 50 km on the exact calendar date
+        if best_argo is not None and best_argo_dist <= 50.0:
+            argo_observation = {
+                "available": True,
+                "platform": str(best_argo["platform"]),
+                "cycle": int(best_argo["cycle"]),
+                "profile_date": str(best_argo["date"]),
+                "lat": float(best_argo["lat"]),
+                "lon": float(best_argo["lon"]),
+                "distance_km": round(float(best_argo_dist), 1),
+                "z_min_m": float(best_argo["z_min"]),
+                "z_max_m": float(best_argo["z_max"]),
+                "temps": best_argo["temps"],
+                "summary": f"In-situ ARGO Float #{best_argo['platform']} (Cycle {best_argo['cycle']}) collocated at {best_argo_dist:.1f} km",
+            }
+        else:
+            argo_observation = {
+                "available": False,
+                "platform": None,
+                "cycle": None,
+                "profile_date": None,
+                "lat": None,
+                "lon": None,
+                "distance_km": round(float(best_argo_dist), 1) if best_argo is not None else None,
+                "z_min_m": None,
+                "z_max_m": None,
+                "temps": [None] * len(TARGET_DEPTHS),
+                "message": "No nearby Argo observation available for this location/date",
+                "summary": "No nearby in-situ ARGO observation available for this location/date",
+            }
+
         # Temperature profile formatting
         profile_data = []
         for d_idx, depth in enumerate(TARGET_DEPTHS):
             pred_t = float(y_pred[d_idx])
             target_t = float(y_target[d_idx]) if y_target is not None else None
-            diff_t = float(pred_t - target_t) if target_t is not None else None
+            argo_t = (
+                float(argo_observation["temps"][d_idx])
+                if argo_observation["available"] and argo_observation["temps"][d_idx] is not None
+                else None
+            )
+            diff_argo = round(pred_t - argo_t, 2) if argo_t is not None else None
 
             profile_data.append({
                 "depth_m": float(depth),
                 "predicted_temp_c": round(pred_t, 2),
-                "target_temp_c": round(target_t, 2) if target_t is not None else None,
-                "diff_c": round(diff_t, 2) if diff_t is not None else None,
+                "argo_temp_c": round(argo_t, 2) if argo_t is not None else None,
+                "target_temp_c": round(target_t, 2) if target_t is not None else None,  # preserved for training pipeline integrity
+                "glorys_target_temp_c": round(target_t, 2) if target_t is not None else None,
+                "diff_c": diff_argo,
+                "diff_argo_c": diff_argo,
             })
 
         # Physical diagnostics
@@ -325,6 +394,7 @@ class OceanEmbedEngine:
             },
             "surface_conditions": surface_conditions,
             "profile": profile_data,
+            "argo_observation": argo_observation,
             "diagnostics": {
                 "mixed_layer_depth_m": round(float(mld), 1),
                 "thermocline_core_depth_m": round(float(thermocline_depth), 0),

@@ -124,7 +124,7 @@ function initMap() {
     iconAnchor: [13, 26],
   });
 
-  currentMarker = L.marker([15.25, 87.50], { icon: customIcon }).addTo(map);
+  currentMarker = L.marker([14.00, 87.00], { icon: customIcon }).addTo(map);
 
   // Click on map to select coordinates
   map.on("click", (e) => {
@@ -187,10 +187,10 @@ function initControls() {
 
 function handleQuickLocation(locId) {
   const presets = {
-    central_bay: { lat: 15.25, lon: 87.50, date: "2024-11-15" },
-    northern_bay: { lat: 19.00, lon: 89.00, date: "2024-05-15" },
+    central_bay: { lat: 14.00, lon: 87.00, date: "2024-04-06" },
+    northern_bay: { lat: 17.50, lon: 88.50, date: "2024-05-24" },
     southern_bay: { lat: 7.50, lon: 85.50, date: "2024-07-15" },
-    andaman_sea: { lat: 10.25, lon: 95.75, date: "2024-03-15" },
+    andaman_sea: { lat: 10.50, lon: 91.25, date: "2024-08-27" },
     sri_lanka_east: { lat: 8.25, lon: 83.50, date: "2024-09-15" },
   };
 
@@ -263,9 +263,10 @@ async function runPrediction(lat, lon, date) {
     // 1. Update Surface Conditions Cards
     updateSurfaceCards(data.surface_conditions);
 
-    // 2. Render Profile Chart & Table
-    renderProfileChart(data.profile);
-    renderProfileTable(data.profile);
+    // 2. Render Profile Chart, Table & In-Situ Argo Banner
+    renderProfileChart(data.profile, data.argo_observation);
+    renderProfileTable(data.profile, data.argo_observation);
+    updateArgoBanner(data.argo_observation);
 
     // 3. Update Studio info if active
     updateStudioView();
@@ -306,6 +307,15 @@ function clearPredictionDisplay(statusText = "—") {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
   });
+  const banner = document.getElementById("argo-observation-banner");
+  if (banner) {
+    banner.className = "argo-obs-banner unmatched";
+    banner.innerHTML = `
+      <i data-lucide="info" style="width: 14px; height: 14px; flex-shrink: 0; color: #64748B;"></i>
+      <span>No nearby Argo observation available for this location/date</span>
+    `;
+    if (window.lucide && typeof lucide.createIcons === "function") lucide.createIcons();
+  }
 }
 
 /* ==========================================================================
@@ -383,14 +393,12 @@ function interpolateColor(color1, color2, factor) {
 /* ==========================================================================
    7. VERTICAL TEMPERATURE PROFILE CHART & TABLE
    ========================================================================== */
-function renderProfileChart(profile) {
+function renderProfileChart(profile, argoObs) {
   const ctx = document.getElementById("profile-chart");
   if (!ctx || !profile) return;
 
   const depths = profile.map((p) => p.depth_m);
-  const temps = profile.map((p) => p.predicted_temp_c);
-  const hasTarget = profile[0].target_temp_c !== null;
-  const targetTemps = hasTarget ? profile.map((p) => p.target_temp_c) : [];
+  const hasArgo = argoObs && argoObs.available && profile.some((p) => p.argo_temp_c !== null && p.argo_temp_c !== undefined);
 
   if (profileChart) {
     profileChart.destroy();
@@ -413,15 +421,24 @@ function renderProfileChart(profile) {
     },
   ];
 
-  if (hasTarget) {
+  if (hasArgo) {
+    // Only include depths where Argo observations actually exist (strictly no extrapolation)
+    const argoPoints = profile
+      .filter((p) => p.argo_temp_c !== null && p.argo_temp_c !== undefined)
+      .map((p) => ({ x: p.argo_temp_c, y: p.depth_m }));
+
     datasets.push({
-      label: "GLORYS Target",
-      data: profile.map((p) => ({ x: p.target_temp_c, y: p.depth_m })),
-      borderColor: "#94A3B8",
-      borderWidth: 1.8,
+      label: "Argo Observation",
+      data: argoPoints,
+      borderColor: "#E65100",
+      backgroundColor: "#E65100",
+      borderWidth: 2.0,
       borderDash: [5, 4],
-      pointRadius: 3,
-      pointBackgroundColor: "#94A3B8",
+      pointRadius: 4.5,
+      pointHoverRadius: 6.5,
+      pointBackgroundColor: "#E65100",
+      pointBorderColor: "#FFFFFF",
+      pointBorderWidth: 1.5,
       tension: 0.35,
       fill: false,
     });
@@ -445,7 +462,7 @@ function renderProfileChart(profile) {
           labels: {
             boxWidth: 12,
             font: { size: 10, family: "'Plus Jakarta Sans', sans-serif", weight: "bold" },
-            color: "#64748B",
+            color: "#475569",
           },
         },
         tooltip: {
@@ -497,21 +514,55 @@ function renderProfileChart(profile) {
   });
 }
 
-function renderProfileTable(profile) {
+function renderProfileTable(profile, argoObs) {
   const tbody = document.getElementById("profile-table-body");
   if (!tbody || !profile) return;
   tbody.innerHTML = "";
 
   profile.forEach((row) => {
     const tr = document.createElement("tr");
-    const hasTarget = row.target_temp_c !== null;
+    const hasArgoVal = row.argo_temp_c !== null && row.argo_temp_c !== undefined;
     tr.innerHTML = `
       <td>${row.depth_m} m</td>
       <td style="font-weight: 700; color: #0F5B78;">${row.predicted_temp_c.toFixed(1)}</td>
-      <td style="color: #64748B;">${hasTarget ? row.target_temp_c.toFixed(1) : "&mdash;"}</td>
+      <td style="color: ${hasArgoVal ? "#E65100" : "#94A3B8"}; font-weight: ${hasArgoVal ? "600" : "normal"};">${hasArgoVal ? row.argo_temp_c.toFixed(1) : "&mdash;"}</td>
     `;
     tbody.appendChild(tr);
   });
+}
+
+function updateArgoBanner(argoObs) {
+  const banner = document.getElementById("argo-observation-banner");
+  const badge = document.getElementById("argo-match-badge");
+  if (!banner) return;
+
+  if (argoObs && argoObs.available) {
+    banner.className = "argo-obs-banner matched";
+    banner.innerHTML = `
+      <i data-lucide="check-circle" style="width: 14px; height: 14px; flex-shrink: 0; color: #16A34A;"></i>
+      <span><strong>In-Situ Argo Collocation:</strong> Float #${argoObs.platform} (Cycle ${argoObs.cycle} &bull; ${argoObs.distance_km} km away &bull; Date: ${argoObs.profile_date})</span>
+    `;
+    if (badge) {
+      badge.innerText = `Argo Collocated (${argoObs.distance_km} km)`;
+      badge.style.color = "#166534";
+      badge.style.backgroundColor = "#DCFCE7";
+    }
+  } else {
+    banner.className = "argo-obs-banner unmatched";
+    banner.innerHTML = `
+      <i data-lucide="info" style="width: 14px; height: 14px; flex-shrink: 0; color: #64748B;"></i>
+      <span>No nearby Argo observation available for this location/date</span>
+    `;
+    if (badge) {
+      badge.innerText = "OceanEmbed CNN (15 Depths)";
+      badge.style.color = "var(--primary-ocean)";
+      badge.style.backgroundColor = "var(--accent-light-blue)";
+    }
+  }
+
+  if (window.lucide && typeof lucide.createIcons === "function") {
+    lucide.createIcons();
+  }
 }
 
 /* ==========================================================================

@@ -626,8 +626,31 @@ body {
 .swatch-neighbor { background: #E2E8F0; border: 1px solid #CBD5E1; }
 
 /* ==========================================================================
-   PREDICTED SUBSURFACE TEMPERATURE PROFILE CARD
+   PROFILE CARD & ARGO OBSERVATION BANNER
    ========================================================================== */
+.argo-obs-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+}
+
+.argo-obs-banner.matched {
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  color: #166534;
+}
+
+.argo-obs-banner.unmatched {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  color: #64748B;
+}
+
 .profile-content-split {
   display: grid;
   grid-template-columns: 1.4fr 1fr;
