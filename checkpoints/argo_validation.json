@@ -44,8 +44,11 @@
   "collocation": {
     "matched_profiles": 672,
     "matched_percentage": 78.87323943661971,
-    "mean_spatial_offset_km": 0.0,
-    "max_spatial_offset_km": 0.0,
+    "mean_spatial_offset_km": 10.440014083546403,
+    "max_spatial_offset_km": 18.58719024076836,
+    "mean_physical_offset_km": 10.440014083546403,
+    "max_physical_offset_km": 18.58719024076836,
+    "processed_grid_offset_km": 0.0,
     "temporal_matching": "Exact calendar date (dt = 0 days)"
   },
   "overall_metrics": {

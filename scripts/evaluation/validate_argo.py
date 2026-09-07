@@ -145,7 +145,8 @@ def run_argo_validation():
         patch_lookup[key] = (row["split"], int(row["idx"]), float(row["lat"]), float(row["lon"]))
 
     matched_list = []
-    spatial_offsets_km = []
+    spatial_offsets_raw_km = []
+    spatial_offsets_grid_km = []
 
     for (plat, cycle, date), prof in grouped_profiles:
         raw_lat = float(prof["latitude"].mean())
@@ -161,11 +162,17 @@ def run_argo_validation():
         if key in patch_lookup:
             split, sample_idx, grid_lat, grid_lon = patch_lookup[key]
 
-            # Calculate spatial distance (great-circle approximation)
-            dlat_km = (p_lat - grid_lat) * 111.0
-            dlon_km = (p_lon - grid_lon) * 111.0 * np.cos(np.radians(p_lat))
-            dist_km = float(np.sqrt(dlat_km ** 2 + dlon_km ** 2))
-            spatial_offsets_km.append(dist_km)
+            # Physical in-situ observation -> assigned grid cell distance
+            dlat_raw_km = (raw_lat - grid_lat) * 111.0
+            dlon_raw_km = (raw_lon - grid_lon) * 111.0 * np.cos(np.radians(raw_lat))
+            dist_raw_km = float(np.sqrt(dlat_raw_km ** 2 + dlon_raw_km ** 2))
+            spatial_offsets_raw_km.append(dist_raw_km)
+
+            # Processed grid coordinate -> model grid distance (exact 0.00 km)
+            dlat_grid_km = (p_lat - grid_lat) * 111.0
+            dlon_grid_km = (p_lon - grid_lon) * 111.0 * np.cos(np.radians(p_lat))
+            dist_grid_km = float(np.sqrt(dlat_grid_km ** 2 + dlon_grid_km ** 2))
+            spatial_offsets_grid_km.append(dist_grid_km)
 
             # Extract depth and temperature
             prof_sorted = prof.sort_values("depth_m")
@@ -203,7 +210,7 @@ def run_argo_validation():
                 "lon": p_lon,
                 "grid_lat": grid_lat,
                 "grid_lon": grid_lon,
-                "dist_km": dist_km,
+                "dist_km": dist_raw_km,
                 "split": split,
                 "sample_idx": sample_idx,
                 "z_min": z_min,
@@ -213,12 +220,15 @@ def run_argo_validation():
 
     num_matched = len(matched_list)
     match_pct = (num_matched / total_valid_profiles) * 100
-    mean_dist_km = float(np.mean(spatial_offsets_km))
-    max_dist_km = float(np.max(spatial_offsets_km))
+    mean_raw_dist_km = float(np.mean(spatial_offsets_raw_km))
+    max_raw_dist_km = float(np.max(spatial_offsets_raw_km))
+    mean_grid_dist_km = float(np.mean(spatial_offsets_grid_km))
+    max_grid_dist_km = float(np.max(spatial_offsets_grid_km))
 
     print(f"Matched ARGO profiles with pure-ocean patch: {num_matched:,} / {total_valid_profiles:,} ({match_pct:.2f}%)")
     print(f"Unmatched profiles (shelf/boundary rejected): {total_valid_profiles - num_matched:,} ({100 - match_pct:.2f}%)")
-    print(f"Spatial matching offset: Mean = {mean_dist_km:.2f} km, Max = {max_dist_km:.2f} km")
+    print(f"Physical in-situ separation (Raw float -> grid center): Mean = {mean_raw_dist_km:.2f} km, Max = {max_raw_dist_km:.2f} km")
+    print(f"Processed grid representation offset (Grid -> Grid):     Mean = {mean_grid_dist_km:.2f} km, Max = {max_grid_dist_km:.2f} km")
     print("Temporal matching:       Exact calendar date match (dt = 0 days)")
 
     # ====================================================================
@@ -447,8 +457,11 @@ def run_argo_validation():
         "collocation": {
             "matched_profiles": num_matched,
             "matched_percentage": match_pct,
-            "mean_spatial_offset_km": mean_dist_km,
-            "max_spatial_offset_km": max_dist_km,
+            "mean_spatial_offset_km": mean_raw_dist_km,
+            "max_spatial_offset_km": max_raw_dist_km,
+            "mean_physical_offset_km": mean_raw_dist_km,
+            "max_physical_offset_km": max_raw_dist_km,
+            "processed_grid_offset_km": mean_grid_dist_km,
             "temporal_matching": "Exact calendar date (dt = 0 days)",
         },
         "overall_metrics": {
@@ -518,9 +531,10 @@ def run_argo_validation():
         "## 2. Spatiotemporal Collocation Summary",
         "",
         "- **Temporal Matching**: Strict same-day matching (calendar date dt = 0 days).",
-        "- **Spatial Matching**: Snapped to nearest 0.25° grid center.",
-        f"  - **Mean Distance to Float**: **{mean_dist_km:.2f} km**",
-        f"  - **Maximum Distance**: **{max_dist_km:.2f} km** (well within grid cell diagonal ~27 km)",
+        "- **Spatial Matching & Audit Preservation**:",
+        f"  - **Physical In-Situ Distance (Raw Float -> Assigned 0.25° Grid Center)**: Mean = **{mean_raw_dist_km:.2f} km**, Max = **{max_raw_dist_km:.2f} km** (well within grid cell diagonal ~27 km)",
+        f"  - **Processed Grid Alignment (Nearest 0.25° -> Model Grid)**: Mean = **{mean_grid_dist_km:.2f} km**, Max = **{max_grid_dist_km:.2f} km** (exact cell center alignment)",
+        "- **Scientific Principle**: Argo observations retain their original raw physical coordinates in the source NetCDF files (`data/raw/argo/`). For integration with OceanEmbed's 0.25° model grid, processed Argo profile coordinates are mapped to the nearest 0.25° grid cell (`rounded_value = round(value / 0.25) * 0.25`).",
         "- **Depth Conversion**: Sea water pressure (dbar) converted to depth (m) using standard UNESCO 1983 / Saunders polynomial formula accounting for latitude-dependent gravitational acceleration.",
         "- **Vertical Interpolation**: 1D piecewise linear interpolation between adjacent observed levels.",
         "  - Near-surface: Mixed layer extension (T(0) = T(z_min)) applied only if z_min <= 5.0 m.",

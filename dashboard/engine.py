@@ -312,24 +312,44 @@ class OceanEmbedEngine:
         best_argo_dist = float("inf")
         best_reported_dist = float("inf")
         for p in argo_candidates:
-            d_req = haversine_distance_km(float(lat), float(lon), float(p["lat"]), float(p["lon"]))
-            d_cell = haversine_distance_km(float(actual_lat), float(actual_lon), float(p["lat"]), float(p["lon"]))
-            d_colloc = min(d_req, d_cell)
+            # Model grid coordinates (0.25°)
+            p_grid_lat = float(p.get("grid_lat", p["lat"]))
+            p_grid_lon = float(p.get("grid_lon", p["lon"]))
+            # Original raw physical observation coordinates
+            p_raw_lat = float(p.get("raw_lat", p_grid_lat))
+            p_raw_lon = float(p.get("raw_lon", p_grid_lon))
+
+            # Grid-based distance for cell matching
+            d_grid = haversine_distance_km(float(actual_lat), float(actual_lon), p_grid_lat, p_grid_lon)
+            # Physical distance from original Argo in-situ location to user query & model grid
+            d_phys_user = haversine_distance_km(float(lat), float(lon), p_raw_lat, p_raw_lon)
+            d_phys_cell = haversine_distance_km(float(actual_lat), float(actual_lon), p_raw_lat, p_raw_lon)
+
+            # Collocation criterion: matches if either within grid cell or within 50 km
+            d_colloc = min(d_grid, d_phys_user, d_phys_cell)
             if d_colloc < best_argo_dist:
                 best_argo_dist = d_colloc
-                best_reported_dist = d_req
+                best_reported_dist = d_phys_user if abs(float(lat) - float(actual_lat)) < 1e-4 and abs(float(lon) - float(actual_lon)) < 1e-4 else min(d_phys_user, d_phys_cell)
                 best_argo = p
 
         # Collocation threshold: 50 km on the exact calendar date
         if best_argo is not None and best_argo_dist <= 50.0:
             reported_dist = round(float(best_reported_dist), 1)
+            p_grid_lat = float(best_argo.get("grid_lat", best_argo["lat"]))
+            p_grid_lon = float(best_argo.get("grid_lon", best_argo["lon"]))
+            p_raw_lat = float(best_argo.get("raw_lat", p_grid_lat))
+            p_raw_lon = float(best_argo.get("raw_lon", p_grid_lon))
             argo_observation = {
                 "available": True,
                 "platform": str(best_argo["platform"]),
                 "cycle": int(best_argo["cycle"]),
                 "profile_date": str(best_argo["date"]),
-                "lat": float(best_argo["lat"]),
-                "lon": float(best_argo["lon"]),
+                "lat": p_grid_lat,
+                "lon": p_grid_lon,
+                "grid_lat": p_grid_lat,
+                "grid_lon": p_grid_lon,
+                "raw_lat": p_raw_lat,
+                "raw_lon": p_raw_lon,
                 "distance_km": reported_dist,
                 "z_min_m": float(best_argo["z_min"]),
                 "z_max_m": float(best_argo["z_max"]),
