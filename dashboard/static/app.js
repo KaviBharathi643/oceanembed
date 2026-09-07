@@ -396,6 +396,10 @@ function clearPredictionDisplay(statusText = "—") {
     `;
     if (window.lucide && typeof lucide.createIcons === "function") lucide.createIcons();
   }
+  const summaryEl = document.getElementById("argo-depth-summary");
+  if (summaryEl) summaryEl.textContent = "";
+  const tbody = document.getElementById("profile-table-body");
+  if (tbody) tbody.innerHTML = "";
 }
 
 /* ==========================================================================
@@ -596,16 +600,35 @@ function renderProfileChart(profile, argoObs) {
 
 function renderProfileTable(profile, argoObs) {
   const tbody = document.getElementById("profile-table-body");
+  const summaryEl = document.getElementById("argo-depth-summary");
   if (!tbody || !profile) return;
   tbody.innerHTML = "";
+
+  const hasArgoMatch = Boolean(argoObs && argoObs.available);
+  const argoCount = profile.filter(
+    (row) => row.argo_temp_c !== null && row.argo_temp_c !== undefined
+  ).length;
+
+  if (summaryEl) {
+    if (!hasArgoMatch || argoCount === 0) {
+      summaryEl.textContent = "In-situ Argo observations unavailable for this location/date.";
+      summaryEl.style.color = "#64748B";
+    } else if (argoCount === 15) {
+      summaryEl.textContent = "15-depth comparison based on collocated Argo observations.";
+      summaryEl.style.color = "#16A34A";
+    } else {
+      summaryEl.textContent = `Argo observations available at ${argoCount} of 15 standard depths.`;
+      summaryEl.style.color = "#0284C7";
+    }
+  }
 
   profile.forEach((row) => {
     const tr = document.createElement("tr");
     const hasArgoVal = row.argo_temp_c !== null && row.argo_temp_c !== undefined;
     tr.innerHTML = `
-      <td>${row.depth_m} m</td>
-      <td style="font-weight: 700; color: #0F5B78;">${row.predicted_temp_c.toFixed(1)}</td>
-      <td style="color: ${hasArgoVal ? "#E65100" : "#94A3B8"}; font-weight: ${hasArgoVal ? "600" : "normal"};">${hasArgoVal ? row.argo_temp_c.toFixed(1) : "&mdash;"}</td>
+      <td>${row.depth_m}</td>
+      <td style="font-weight: 700; color: #0F5B78;">${row.predicted_temp_c.toFixed(2)}</td>
+      <td style="color: ${hasArgoVal ? "#E65100" : "#94A3B8"}; font-weight: ${hasArgoVal ? "600" : "normal"};">${hasArgoVal ? row.argo_temp_c.toFixed(2) : "&mdash;"}</td>
     `;
     tbody.appendChild(tr);
   });

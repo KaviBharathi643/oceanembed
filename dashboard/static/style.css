@@ -663,11 +663,47 @@ body {
   position: relative;
 }
 
+.table-side-container {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.table-header-box {
+  margin-bottom: 8px;
+}
+
+.table-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #0F5B78;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.table-subtitle {
+  font-size: 0.72rem;
+  color: #64748B;
+  margin: 2px 0 0 0;
+  line-height: 1.3;
+}
+
+.depth-table-summary {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #0284C7;
+  margin-top: 4px;
+  min-height: 16px;
+  line-height: 1.3;
+}
+
 .depth-table-scroll {
-  max-height: 290px;
+  max-height: 246px;
   overflow-y: auto;
+  overflow-x: auto;
   border: 1px solid var(--border-color);
   border-radius: 8px;
+  background: #FFFFFF;
 }
 
 .depth-data-table {
@@ -685,6 +721,8 @@ body {
   border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: 0;
+  white-space: nowrap;
+  z-index: 1;
 }
 
 .depth-data-table th:first-child { text-align: left; }

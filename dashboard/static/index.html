@@ -285,20 +285,29 @@
                   <canvas id="profile-chart"></canvas>
                 </div>
 
-                <!-- 15-Depth Data Table -->
-                <div class="depth-table-scroll">
-                  <table class="depth-data-table">
-                    <thead>
-                      <tr>
-                        <th>Depth (m)</th>
-                        <th>Predicted (&deg;C)</th>
-                        <th>Argo Observation (&deg;C)</th>
-                      </tr>
-                    </thead>
-                    <tbody id="profile-table-body">
-                      <!-- Filled dynamically -->
-                    </tbody>
-                  </table>
+                <!-- Numerical Comparison Table Container -->
+                <div class="table-side-container">
+                  <div class="table-header-box">
+                    <h4 class="table-title">Depth-wise Temperature Comparison</h4>
+                    <p class="table-subtitle">OceanEmbed Prediction vs. Independent Argo Observation</p>
+                    <div id="argo-depth-summary" class="depth-table-summary"></div>
+                  </div>
+
+                  <!-- 15-Depth Data Table -->
+                  <div class="depth-table-scroll">
+                    <table class="depth-data-table">
+                      <thead>
+                        <tr>
+                          <th>Depth (m)</th>
+                          <th>OceanEmbed Prediction (&deg;C)</th>
+                          <th>Argo Observation (&deg;C)</th>
+                        </tr>
+                      </thead>
+                      <tbody id="profile-table-body">
+                        <!-- Filled dynamically -->
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
 
