@@ -61,6 +61,7 @@ data/processed/*
 !data/processed/preprocessing_report.json
 !data/processed/sample_metadata.csv
 !data/processed/argo_profiles.json
+!data/processed/argo_profiles_all_852.csv
 **/.staging/
 *.partial
 

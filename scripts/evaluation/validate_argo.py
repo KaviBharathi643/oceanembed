@@ -148,10 +148,14 @@ def run_argo_validation():
     spatial_offsets_km = []
 
     for (plat, cycle, date), prof in grouped_profiles:
-        p_lat = float(prof["latitude"].mean())
-        p_lon = float(prof["longitude"].mean())
-        snap_lat = round(round(p_lat * 4.0) / 4.0, 2)
-        snap_lon = round(round(p_lon * 4.0) / 4.0, 2)
+        raw_lat = float(prof["latitude"].mean())
+        raw_lon = float(prof["longitude"].mean())
+        # Processed Argo coordinates rounded to nearest 0.25° grid:
+        # rounded_value = round(value / 0.25) * 0.25
+        p_lat = round(round(raw_lat / 0.25) * 0.25, 2)
+        p_lon = round(round(raw_lon / 0.25) * 0.25, 2)
+        snap_lat = p_lat
+        snap_lon = p_lon
 
         key = (date, snap_lat, snap_lon)
         if key in patch_lookup:
