@@ -243,8 +243,8 @@ class OceanEmbedEngine:
                     best_dist = d
                     best_pt = (p_split, p_idx, p_lat, p_lon)
 
-            # If closest point is > 100km away (e.g. inland India/Myanmar/shelf)
-            if best_dist > 100.0:
+            # If closest point is > 250km away (e.g. inland India/Myanmar/shelf)
+            if best_dist > 250.0:
                 return {
                     "success": False,
                     "error": (
@@ -310,14 +310,19 @@ class OceanEmbedEngine:
         argo_candidates = self.argo_by_date.get(norm_date, [])
         best_argo = None
         best_argo_dist = float("inf")
+        best_reported_dist = float("inf")
         for p in argo_candidates:
-            d_a = haversine_distance_km(float(actual_lat), float(actual_lon), float(p["lat"]), float(p["lon"]))
-            if d_a < best_argo_dist:
-                best_argo_dist = d_a
+            d_req = haversine_distance_km(float(lat), float(lon), float(p["lat"]), float(p["lon"]))
+            d_cell = haversine_distance_km(float(actual_lat), float(actual_lon), float(p["lat"]), float(p["lon"]))
+            d_colloc = min(d_req, d_cell)
+            if d_colloc < best_argo_dist:
+                best_argo_dist = d_colloc
+                best_reported_dist = d_req
                 best_argo = p
 
         # Collocation threshold: 50 km on the exact calendar date
         if best_argo is not None and best_argo_dist <= 50.0:
+            reported_dist = round(float(best_reported_dist), 1)
             argo_observation = {
                 "available": True,
                 "platform": str(best_argo["platform"]),
@@ -325,11 +330,11 @@ class OceanEmbedEngine:
                 "profile_date": str(best_argo["date"]),
                 "lat": float(best_argo["lat"]),
                 "lon": float(best_argo["lon"]),
-                "distance_km": round(float(best_argo_dist), 1),
+                "distance_km": reported_dist,
                 "z_min_m": float(best_argo["z_min"]),
                 "z_max_m": float(best_argo["z_max"]),
                 "temps": best_argo["temps"],
-                "summary": f"In-situ ARGO Float #{best_argo['platform']} (Cycle {best_argo['cycle']}) collocated at {best_argo_dist:.1f} km",
+                "summary": f"In-situ ARGO Float #{best_argo['platform']} (Cycle {best_argo['cycle']}) collocated at {reported_dist:.1f} km",
             }
         else:
             argo_observation = {

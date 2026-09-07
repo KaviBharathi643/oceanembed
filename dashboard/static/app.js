@@ -134,6 +134,11 @@ function initMap() {
     const lat = Math.round(e.latlng.lat * 4.0) / 4.0;
     const lon = Math.round(e.latlng.lng * 4.0) / 4.0;
 
+    if (lat < 5.0 || lat > 25.0 || lon < 80.0 || lon > 100.0) {
+      showToast(`Selected point (${lat.toFixed(2)}°N, ${lon.toFixed(2)}°E) is outside the Bay of Bengal domain (5°N–25°N, 80°E–100°E).`, "warning");
+      return;
+    }
+
     document.getElementById("input-lat").value = lat.toFixed(2);
     document.getElementById("input-lon").value = lon.toFixed(2);
 
@@ -142,8 +147,10 @@ function initMap() {
     // Deselect quick buttons
     document.querySelectorAll(".btn-quick-loc").forEach((b) => b.classList.remove("active"));
 
-    const dateVal = document.getElementById("explore-date-input").value;
-    runPrediction(lat, lon, dateVal);
+    const dateVal = (document.getElementById("explore-date-input")?.value || "").trim();
+    if (dateVal) {
+      runPrediction(lat, lon, dateVal);
+    }
   });
 }
 
@@ -161,17 +168,58 @@ function initControls() {
   const displayDate = document.getElementById("display-date");
 
   dateInput.addEventListener("change", (e) => {
-    displayDate.value = e.target.value;
-    const lat = parseFloat(document.getElementById("input-lat").value);
-    const lon = parseFloat(document.getElementById("input-lon").value);
-    runPrediction(lat, lon, e.target.value);
+    const dVal = (e.target.value || "").trim();
+    if (!dVal) {
+      showToast("Please select a valid date in 2024.", "warning");
+      return;
+    }
+    if (displayDate) displayDate.value = dVal;
+    const rawLat = (document.getElementById("input-lat")?.value || "").trim();
+    const rawLon = (document.getElementById("input-lon")?.value || "").trim();
+    const lat = parseFloat(rawLat);
+    const lon = parseFloat(rawLon);
+    if (!isNaN(lat) && lat >= 5.0 && lat <= 25.0 && !isNaN(lon) && lon >= 80.0 && lon <= 100.0) {
+      runPrediction(lat, lon, dVal);
+    }
   });
 
   const predictBtn = document.getElementById("btn-run-prediction");
   predictBtn.addEventListener("click", () => {
-    const lat = parseFloat(document.getElementById("input-lat").value);
-    const lon = parseFloat(document.getElementById("input-lon").value);
-    const dateVal = dateInput.value;
+    const rawLat = (document.getElementById("input-lat")?.value || "").trim();
+    const rawLon = (document.getElementById("input-lon")?.value || "").trim();
+    const dateVal = (dateInput?.value || "").trim();
+
+    if (!rawLat || isNaN(parseFloat(rawLat))) {
+      showToast("Please enter a valid numeric latitude (5.00°N to 25.00°N).", "warning");
+      document.getElementById("input-lat")?.focus();
+      return;
+    }
+    const lat = parseFloat(rawLat);
+    if (lat < 5.0 || lat > 25.0) {
+      showToast(`Latitude (${lat.toFixed(2)}°N) must be between 5.00°N and 25.00°N within the Bay of Bengal domain.`, "warning");
+      document.getElementById("input-lat")?.focus();
+      return;
+    }
+
+    if (!rawLon || isNaN(parseFloat(rawLon))) {
+      showToast("Please enter a valid numeric longitude (80.00°E to 100.00°E).", "warning");
+      document.getElementById("input-lon")?.focus();
+      return;
+    }
+    const lon = parseFloat(rawLon);
+    if (lon < 80.0 || lon > 100.0) {
+      showToast(`Longitude (${lon.toFixed(2)}°E) must be between 80.00°E and 100.00°E within the Bay of Bengal domain.`, "warning");
+      document.getElementById("input-lon")?.focus();
+      return;
+    }
+
+    if (!dateVal) {
+      showToast("Please select a valid calendar date in 2024.", "warning");
+      dateInput?.focus();
+      return;
+    }
+
+    updateMarker(lat, lon);
     runPrediction(lat, lon, dateVal);
   });
 
@@ -238,26 +286,52 @@ function initGrid5x5() {
 /* ==========================================================================
    5. LIVE INFERENCE EXECUTION
    ========================================================================== */
+let isPredictionRunning = false;
+
 async function runPrediction(lat, lon, date) {
+  if (isPredictionRunning) {
+    return;
+  }
+
+  // Defensive validation guard
+  if (typeof lat !== "number" || isNaN(lat) || typeof lon !== "number" || isNaN(lon)) {
+    showToast("Please enter valid numeric coordinates.", "warning");
+    return;
+  }
+  if (lat < 5.0 || lat > 25.0 || lon < 80.0 || lon > 100.0) {
+    showToast(`Coordinates (${lat.toFixed(2)}°N, ${lon.toFixed(2)}°E) are outside the Bay of Bengal domain (5°N–25°N, 80°E–100°E).`, "warning");
+    return;
+  }
+  const cleanDate = String(date || "").trim();
+  if (!cleanDate) {
+    showToast("Please select a valid calendar date in 2024.", "warning");
+    return;
+  }
+
+  isPredictionRunning = true;
   const btn = document.getElementById("btn-run-prediction");
-  const originalBtnText = btn.innerHTML;
-  btn.innerHTML = `<span class="spinner"></span> <span>Running Inference...</span>`;
-  btn.disabled = true;
+  const originalBtnText = btn ? btn.innerHTML : "";
+  if (btn) {
+    btn.innerHTML = `<span class="spinner"></span> <span>Running Inference...</span>`;
+    btn.disabled = true;
+  }
 
   try {
     const response = await fetch("/api/predict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lat, lon, date }),
+      body: JSON.stringify({ lat, lon, date: cleanDate }),
     });
 
     const data = await response.json();
 
-    if (!data.success) {
-      showToast(data.error || "That location does not have a valid 5x5 ocean context for this prototype. Try a verified demo location.", "warning");
+    if (!response.ok || !data.success) {
+      let errorMsg = data.error;
+      if (!errorMsg && data.detail && Array.isArray(data.detail)) {
+        errorMsg = data.detail.map((d) => d.msg || JSON.stringify(d)).join("; ");
+      }
+      showToast(errorMsg || "That location does not have a valid 5x5 ocean context for this prototype. Try a verified demo location.", "warning");
       clearPredictionDisplay("Unavailable");
-      btn.innerHTML = originalBtnText;
-      btn.disabled = false;
       return;
     }
 
@@ -287,8 +361,11 @@ async function runPrediction(lat, lon, date) {
     showToast("Unable to reach inference engine. Try a verified demo location.", "warning");
     clearPredictionDisplay("Unavailable");
   } finally {
-    btn.innerHTML = originalBtnText;
-    btn.disabled = false;
+    isPredictionRunning = false;
+    if (btn) {
+      btn.innerHTML = originalBtnText;
+      btn.disabled = false;
+    }
   }
 }
 

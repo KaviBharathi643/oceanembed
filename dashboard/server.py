@@ -13,7 +13,8 @@ import sys
 import json
 from pathlib import Path
 from typing import Optional
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
@@ -27,6 +28,35 @@ app = FastAPI(
     description="On-demand model inference and oceanographic dashboard for SIH 2026 Problem Statement 26066",
     version="1.0.0",
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Log structured development diagnostics on invalid payloads without hiding the 422 status."""
+    errors = exc.errors()
+    failing_fields = [
+        ".".join(str(loc) for loc in err.get("loc", []) if loc != "body")
+        for err in errors
+    ]
+    try:
+        raw_body = await request.body()
+        body = raw_body.decode("utf-8", errors="replace")
+    except Exception:
+        body = "<unreadable body>"
+
+    error_summary = "; ".join(f"{err.get('loc', [])}: {err.get('msg', '')}" for err in errors)
+    print(f"[API Validation 422] Failed field(s): {failing_fields} | Error(s): {error_summary} | Payload: {body}")
+
+    return JSONResponse(
+        status_code=422,
+        content={
+            "success": False,
+            "error": f"Invalid request parameter(s): {error_summary}",
+            "detail": errors,
+            "failing_fields": failing_fields,
+        },
+    )
+
 
 # Static directory setup
 STATIC_DIR = Path(__file__).parent / "static"
